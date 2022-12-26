@@ -1,44 +1,34 @@
 org 0x7c00
 
-; set video mode. empty screen
-mov ah, 0x00
-mov al, 0x03
-int 0x10
+mov bx, 0x1000
+mov es, bx
+mov bx, 0  ;ES:BX = 0x1000:0
+mov dh, 0 ;number of sectors to load
+mov dl, 0h ;drive number to load
+mov ch, 0x0
+mov cl, 0x02
+;;setup ES:BX to load sector to memory location
 
-;change color
-mov ah, 0x0B
-mov bh, 0x00
-mov bl, 0x01
-int 0x10
+readDisk:
+   mov ah, 0x02
+   mov al, 0x01
+   int 0x13
 
-mov ah, 0x0e
-mov bx, testString
-call printString
-mov bx, testString2
-call printString
-
-
-;print sample hex
-mov dx, 0x12AB
-call printHex
-
-
-endPrg:
-   jmp $
-;include file
-
-include 'printString.asm'
-include 'printHex.asm'
+   jc readDisk
+   mov ax, 0x1000
+   mov ds, ax
+   mov es, ax
+   mov fs, ax
+   mov gs, ax
+   mov ss, ax
 
 
 
-
-testString: db 'Test print chars ',0xA,0xD ,0
-testString2: db 'Hex test: ',0
+   jmp 0x1000:0
 
 
-   times 510-($-$$) db 0
+times 510-($-$$) db 0
 
-   dw 0xaa55
+dw 0xaa55
 
 
