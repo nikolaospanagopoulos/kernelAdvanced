@@ -32,23 +32,107 @@ runCommand:
 	mov byte [di], 0 ;->put null terminator
 	mov al, [cmdString]
 	cmp al, 'F'
-	jne notFound
+	je fileBrowser
+	cmp al, 'R'
+	je reboot    ;warm reboot
 	cmp al, 'N'
 	je endProgram
-	mov si, successString
+	mov si, failString
 	call printString
 	jmp getInput
+
+
+
+;;;;;;;;;;;;;FILE BROWSER
+;;MENU F__________
+fileBrowser:
+	;RESET SCREEN
+	; set video mode. empty screen
+	mov ah, 0x00
+	mov al, 0x03
+	int 0x10
+
+	;change color
+	mov ah, 0x0B
+	mov bh, 0x00
+	mov bl, 0x01
+	int 0x10
+
+    mov si, fileTableHeading
+	call printString
+	xor cx, cx
+	mov ax, 0x1000
+	mov es, ax
+	xor bx, bx
+	mov ah, 0x0e
+filetableLoop:
+    inc bx
+	mov al, [ES:BX]
+	cmp al, '}'
+	je stop
+	cmp al, '-'
+	je sectorNumLoop
+	cmp al, ','
+	je nextElement
+	inc cx
+	int 0x10
+	jmp filetableLoop
+sectorNumLoop:
+    cmp cx, 21
+	je filetableLoop
+	mov al, ' '
+	int 0x10
+	inc cx
+	jmp sectorNumLoop
+nextElement:
+    xor cx, cx
+	mov al, 0xA
+	int 0x10
+	mov al, 0xD
+	int 0x10
+	mov al, 0xA
+	int 0x10
+	mov al, 0xD
+	int 0x10
+	jmp filetableLoop
+stop:
+    hlt
+
+
+
+
+
 notFound:
     mov si, failString
 	call printString
 	jmp getInput
+
+
+;;;;;;;;;;END PROGRAM
+;;MENU N__________
 endProgram:
 	;end pgm
 		cli
 		hlt 
-successString: db 'Command run OK',0xA, 0xD,0
-failString: db 'Command failed', 0xA, 0xD, 0
-testString: db 'Welcome to PanOs!',0xA,0xD,'****************************',0xA, 0xD, 0xA, 0xD ,'F) file & program browser', 0xA, 0xD, 0
+   
+;;;;;;;;;REBOOT
+;;MENU R__________
+reboot:
+   jmp 0xFFFF:0x0000
+
+
+
+
+
+
+fileTableHeading:db \
+'File/Program      Sector', 0xA, 0xD, \
+'************      ******', 0xA, 0xD, 0
+
+successString: db 0xA, 0xD ,'Command run OK',0xA, 0xD,0
+failString: db 0xA, 0xD,'Command failed', 0xA, 0xD, 0
+testString: db 'Welcome to PanOs!',0xA,0xD,'****************************',0xA, 0xD, 0xA, 0xD ,'F) file & program browser', 0xA, 0xD,\
+'R) Reboot',0xA, 0xD, 0
 cmdString: db ''
 
 
